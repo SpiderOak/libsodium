@@ -114,3 +114,7 @@ android-toolchain-*
 libsodium-android-*
 /bin/
 /obj/
+*.suo
+*.ncb
+*.user
+
