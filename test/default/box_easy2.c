@@ -1,5 +1,3 @@
-#include <stdio.h>
-#include <string.h>
 
 #define TEST_NAME "box_easy2"
 #include "cmptest.h"
@@ -21,12 +19,12 @@ int main(void)
 
     crypto_box_keypair(alicepk, alicesk);
     crypto_box_keypair(bobpk, bobsk);
-    mlen = (unsigned long long) randombytes_uniform((uint32_t) sizeof m);
+    mlen = (unsigned long long)randombytes_uniform((uint32_t)sizeof m);
     randombytes_buf(m, mlen);
     randombytes_buf(nonce, sizeof nonce);
     crypto_box_easy(c, m, mlen, nonce, bobpk, alicesk);
-    if (crypto_box_open_easy(m2, c, mlen + crypto_box_MACBYTES,
-                             nonce, alicepk, bobsk) != 0) {
+    if (crypto_box_open_easy(m2, c, mlen + crypto_box_MACBYTES, nonce, alicepk,
+                             bobsk) != 0) {
         printf("open() failed");
         return 1;
     }
@@ -38,6 +36,16 @@ int main(void)
             return 1;
         }
     }
+
+    memcpy(c, m, mlen);
+    crypto_box_easy(c, c, mlen, nonce, bobpk, alicesk);
+    printf("%d\n", memcmp(m, c, mlen) == 0);
+    printf("%d\n", memcmp(m, c + crypto_box_MACBYTES, mlen) == 0);
+    if (crypto_box_open_easy(c, c, mlen + crypto_box_MACBYTES, nonce, alicepk,
+                             bobsk) != 0) {
+        printf("crypto_box_open_easy() failed\n");
+    }
+
     crypto_box_detached(c, mac, m, mlen, nonce, bobsk, alicepk);
     crypto_box_open_detached(m2, c, mac, mlen, nonce, alicepk, bobsk);
     printf("%d\n", memcmp(m, m2, mlen));

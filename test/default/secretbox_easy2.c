@@ -1,5 +1,3 @@
-#include <stdio.h>
-#include <string.h>
 
 #define TEST_NAME "secretbox_easy2"
 #include "cmptest.h"
@@ -17,23 +15,35 @@ int main(void)
     unsigned long long i;
 
     randombytes_buf(k, sizeof k);
-    mlen = (unsigned long long) randombytes_uniform((uint32_t) sizeof m);
+    mlen = (unsigned long long)randombytes_uniform((uint32_t)sizeof m);
     randombytes_buf(m, mlen);
     randombytes_buf(nonce, sizeof nonce);
     crypto_secretbox_easy(c, m, mlen, nonce, k);
-    crypto_secretbox_open_easy(m2, c, mlen + crypto_secretbox_MACBYTES,
-                               nonce, k);
+    crypto_secretbox_open_easy(m2, c, mlen + crypto_secretbox_MACBYTES, nonce,
+                               k);
     printf("%d\n", memcmp(m, m2, mlen));
 
     for (i = 0; i < mlen + crypto_secretbox_MACBYTES - 1; i++) {
         if (crypto_secretbox_open_easy(m2, c, i, nonce, k) == 0) {
-            printf("short open() should have failed");
+            printf("short open() should have failed\n");
             return 1;
         }
     }
     crypto_secretbox_detached(c, mac, m, mlen, nonce, k);
-    crypto_secretbox_open_detached(m2, c, mac, mlen, nonce, k);
+    if (crypto_secretbox_open_detached(m2, c, mac, mlen, nonce, k) != 0) {
+        printf("crypto_secretbox_open_detached() failed\n");
+    }
     printf("%d\n", memcmp(m, m2, mlen));
+
+    memcpy(c, m, mlen);
+    crypto_secretbox_easy(c, c, mlen, nonce, k);
+    printf("%d\n", memcmp(m, c, mlen) == 0);
+    printf("%d\n", memcmp(m, c + crypto_secretbox_MACBYTES, mlen) == 0);
+    if (crypto_secretbox_open_easy(c, c, mlen + crypto_secretbox_MACBYTES, nonce,
+                                   k) != 0) {
+        printf("crypto_secretbox_open_easy() failed\n");
+    }
+    printf("%d\n", memcmp(m, c, mlen));
 
     return 0;
 }
